@@ -1,0 +1,23 @@
+{
+  "name": "crossly-sheets",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Crossly for Google Sheets: pull inventory, listings, orders and sales into a spreadsheet, bulk-edit stock and prices, push them back.",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/crossly-dev/crossly-sheets.git" },
+  "homepage": "https://github.com/crossly-dev/crossly-sheets#readme",
+  "bugs": "https://github.com/crossly-dev/crossly-sheets/issues",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test test/*.test.js",
+    "check": "node --check src/core.js && node --check src/main.js",
+    "bundle": "node scripts/bundle.js",
+    "push": "clasp push"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "globals": "^16.5.0"
+  }
+}

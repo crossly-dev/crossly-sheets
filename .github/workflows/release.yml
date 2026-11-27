@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run check
+      - run: npm run lint
+      - run: npm test
+      - name: Tag matches package.json
+        run: |
+          PKG="v$(node -p 'require("./package.json").version')"
+          [ "$PKG" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != package.json $PKG"; exit 1; }
+      - name: Bundle clasp project
+        run: VERSION="$GITHUB_REF_NAME" npm run bundle
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/*.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: crossly-sheets-bundle
+          path: dist/*.zip
+          if-no-files-found: error
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES=$(awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## \[?"v {f=1; next} /^## / {f=0} f' CHANGELOG.md)
+          gh release create "$GITHUB_REF_NAME" dist/*.zip --title "$GITHUB_REF_NAME" --notes "${NOTES:-See CHANGELOG.md}" --verify-tag
+
+  clasp-push:
+    # Optional: push the release to a real Apps Script project. Off unless the
+    # repository variable CLASP_PUSH is 'true' and the CLASPRC_JSON / SCRIPT_ID
+    # secrets are set (see README → Continuous deployment).
+    needs: build
+    if: vars.CLASP_PUSH == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: clasp push
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+        run: |
+          [ -n "$CLASPRC_JSON" ] && [ -n "$SCRIPT_ID" ] || { echo "CLASPRC_JSON and SCRIPT_ID secrets are required"; exit 1; }
+          npm install -g @google/clasp
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
+          clasp push --force
+          rm -f "$HOME/.clasprc.json"
