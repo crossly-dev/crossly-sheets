@@ -41,7 +41,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES=$(awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## \[?"v {f=1; next} /^## / {f=0} f' CHANGELOG.md)
+          NOTES=$(awk -v h="## [${GITHUB_REF_NAME#v}]" 'index($0, h) == 1 {f=1; next} /^## / {f=0} f' CHANGELOG.md)
           gh release create "$GITHUB_REF_NAME" dist/*.zip --title "$GITHUB_REF_NAME" --notes "${NOTES:-See CHANGELOG.md}" --verify-tag
 
   clasp-push:
