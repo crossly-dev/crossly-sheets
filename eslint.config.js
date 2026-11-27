@@ -19,7 +19,7 @@ module.exports = [
     languageOptions: { ecmaVersion: 2020, sourceType: 'script', globals: appsScriptGlobals },
     rules: {
       'no-var': 'off',
-      'no-unused-vars': ['error', { vars: 'local', args: 'none' }],
+      'no-unused-vars': ['error', { vars: 'local', args: 'none', caughtErrors: 'none' }],
       'no-redeclare': ['error', { builtinGlobals: false }],
       eqeqeq: ['error', 'always'],
       'no-console': 'error',
